@@ -37,4 +37,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk cli
 .clerk/
+
+# agent skills (local tooling only)
+.agents/
