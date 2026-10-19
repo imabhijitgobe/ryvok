@@ -38,11 +38,11 @@ export default function RootLayout({
         geist.variable
       )}
     >
-      <body>
+      <body className="flex min-h-svh flex-col">
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ThemeProvider>
             <TooltipProvider>
-              <header className="flex items-center justify-end gap-2 p-4">
+              <header className="flex shrink-0 items-center justify-end gap-2 p-4">
                 <Show when="signed-out">
                   <SignInButton mode="modal">
                     <Button variant="ghost">Sign in</Button>
