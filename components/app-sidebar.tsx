@@ -1,9 +1,11 @@
 "use client"
 
 import { UserButton } from "@clerk/nextjs"
+import { formatDistanceToNow } from "date-fns"
 import { PlusIcon, UsersRoundIcon } from "lucide-react"
 import { useState } from "react"
 import { BotDialog } from "@/components/bot-dialog"
+import { ChatAvatar } from "@/components/chat-avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,11 +17,15 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import type { SidebarChat } from "@/queries/bots"
 
 // Clerk renders its own trigger button, so SidebarMenuButton cannot be used as
 // its wrapper: it never forwards className, aria or data props to the DOM. The
@@ -52,7 +58,11 @@ const userButtonAppearance = {
   },
 }
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  chats: SidebarChat[]
+}
+
+export function AppSidebar({ chats }: AppSidebarProps) {
   const [botDialogOpen, setBotDialogOpen] = useState(false)
 
   return (
@@ -87,7 +97,45 @@ export function AppSidebar() {
           showTrigger={false}
         />
       </SidebarHeader>
-      <SidebarContent />
+      <SidebarContent>
+        {chats.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {chats.map((chat) => (
+                  <SidebarMenuItem key={chat.id}>
+                    <SidebarMenuButton
+                      size="lg"
+                      className="h-auto items-start"
+                      tooltip={chat.title}
+                    >
+                      <ChatAvatar seed={chat.avatar} className="size-6" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex min-w-0 items-baseline justify-between gap-2">
+                          <span className="truncate font-medium">
+                            {chat.title}
+                          </span>
+                          <span
+                            className="shrink-0 text-xs text-muted-foreground"
+                            suppressHydrationWarning
+                          >
+                            {formatDistanceToNow(chat.lastMessageAt)}
+                          </span>
+                        </div>
+                        {chat.lastMessagePreview && (
+                          <span className="truncate text-xs text-muted-foreground">
+                            {chat.lastMessagePreview}
+                          </span>
+                        )}
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
