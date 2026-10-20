@@ -60,6 +60,22 @@ export const insertBotSchema = createInsertSchema(bots, {
 
 export type InsertBot = z.infer<typeof insertBotSchema>;
 
+/**
+ * Everything the client may change on an existing bot. Same fields as
+ * `insertBotSchema`, plus the id the update is scoped to. Ownership is still
+ * checked against the Clerk user in the action.
+ */
+export const updateBotSchema = insertBotSchema.extend({
+  id: z.string().min(1, "Missing bot id."),
+});
+
+export type UpdateBot = z.infer<typeof updateBotSchema>;
+
+/** Deleting only needs the id; ownership is checked in the action. */
+export const deleteBotSchema = updateBotSchema.pick({ id: true });
+
+export type DeleteBot = z.infer<typeof deleteBotSchema>;
+
 export const chatKind = pgEnum("chat_kind", ["direct", "group"]);
 
 export const chats = pgTable(

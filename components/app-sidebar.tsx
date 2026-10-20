@@ -3,9 +3,12 @@
 import { UserButton } from "@clerk/nextjs"
 import { formatDistanceToNow } from "date-fns"
 import { PlusIcon, UsersRoundIcon } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { BotDialog } from "@/components/bot-dialog"
 import { ChatAvatar } from "@/components/chat-avatar"
+import { ChatSearch } from "@/components/chat-search"
+import { SidebarDragRail } from "@/components/sidebar-drag-rail"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,7 +26,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 import type { SidebarChat } from "@/queries/bots"
 
@@ -67,30 +69,33 @@ export function AppSidebar({ chats }: AppSidebarProps) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="flex-row items-center justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Create something new"
-              />
-            }
-          >
-            <PlusIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-56">
-            <DropdownMenuItem onClick={() => setBotDialogOpen(true)}>
+      <SidebarHeader>
+        <div className="flex justify-end group-data-[collapsible=icon]:justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Create something new"
+                />
+              }
+            >
               <PlusIcon />
-              Create new bot
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <UsersRoundIcon />
-              Create group chat
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-56">
+              <DropdownMenuItem onClick={() => setBotDialogOpen(true)}>
+                <PlusIcon />
+                Create new bot
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <UsersRoundIcon />
+                Create group chat
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <ChatSearch chats={chats} />
         <BotDialog
           open={botDialogOpen}
           onOpenChange={setBotDialogOpen}
@@ -106,11 +111,12 @@ export function AppSidebar({ chats }: AppSidebarProps) {
                   <SidebarMenuItem key={chat.id}>
                     <SidebarMenuButton
                       size="lg"
-                      className="h-auto items-start"
+                      className="h-auto items-start group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center"
                       tooltip={chat.title}
+                      render={<Link href={`/chats/${chat.id}`} />}
                     >
                       <ChatAvatar seed={chat.avatar} className="size-6" />
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1 group-data-[collapsible=icon]:sr-only">
                         <div className="flex min-w-0 items-baseline justify-between gap-2">
                           <span className="truncate font-medium">
                             {chat.title}
@@ -143,7 +149,7 @@ export function AppSidebar({ chats }: AppSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarDragRail />
     </Sidebar>
   )
 }
