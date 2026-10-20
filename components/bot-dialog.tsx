@@ -58,8 +58,23 @@ const BOT_PRESETS = [
 
 type BotFormValues = z.infer<typeof insertBotSchema>
 
-function BotDialog() {
-  const [open, setOpen] = useState(false)
+type BotDialogProps = {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showTrigger?: boolean
+}
+
+function BotDialog({
+  open: openProp,
+  onOpenChange,
+  showTrigger = true,
+}: BotDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next)
+    setInternalOpen(next)
+  }
   const [isPending, startTransition] = useTransition()
   const [avatar, setAvatar] = useState(() => nanoid())
 
@@ -108,14 +123,16 @@ function BotDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button variant="secondary" size="lg">
-            <PlusIcon data-icon="inline-start" />
-            Create a new bot
-          </Button>
-        }
-      />
+      {showTrigger ? (
+        <DialogTrigger
+          render={
+            <Button variant="secondary" size="lg">
+              <PlusIcon data-icon="inline-start" />
+              Create a new bot
+            </Button>
+          }
+        />
+      ) : null}
       <DialogContent className="sm:max-w-lg">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
