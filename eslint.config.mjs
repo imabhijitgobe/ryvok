@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".agents/**",
     ".clerk/**",
+    // `trigger dev` writes bundled run workers here.
+    ".trigger/**",
   ]),
 ]);
 

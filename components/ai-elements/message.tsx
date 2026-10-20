@@ -13,9 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
@@ -28,7 +25,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Streamdown } from "streamdown";
+import { Streamdown, type PluginConfig } from "streamdown";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
@@ -56,7 +53,7 @@ export const MessageContent = ({
     className={cn(
       "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
       "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
+      "group-[.is-assistant]:rounded-lg group-[.is-assistant]:border group-[.is-assistant]:border-border group-[.is-assistant]:bg-card group-[.is-assistant]:px-4 group-[.is-assistant]:py-3 group-[.is-assistant]:text-card-foreground",
       className
     )}
     {...props}
@@ -101,7 +98,7 @@ export const MessageAction = ({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger>{button}</TooltipTrigger>
+          <TooltipTrigger render={button} />
           <TooltipContent>
             <p>{tooltip}</p>
           </TooltipContent>
@@ -321,19 +318,87 @@ export const MessageBranchPage = ({
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-const streamdownPlugins = { cjk, code, math, mermaid };
+// Shiki, KaTeX and mermaid are tens of megabytes combined. Only the tiny CJK
+// plugin ships with the chat; the rest load the first time a message actually
+// contains a code fence, a formula or a diagram.
+const basePlugins: PluginConfig = { cjk };
 
-export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
+const detectsCode = /(^|\n)\s*```/;
+const detectsMermaid = /(^|\n)\s*```mermaid/;
+const detectsMath = /\$\$|\\\(|\\\[/;
+
+function usePluginsFor(text: string) {
+  const [plugins, setPlugins] = useState<PluginConfig>(basePlugins);
+
+  const needsCode = detectsCode.test(text);
+  const needsMermaid = detectsMermaid.test(text);
+  const needsMath = detectsMath.test(text);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (needsCode && !plugins.code) {
+      void import("@streamdown/code").then((mod) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPlugins((current) => ({ ...current, code: mod.code }));
+      });
+    }
+
+    if (needsMermaid && !plugins.mermaid) {
+      void import("@streamdown/mermaid").then((mod) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPlugins((current) => ({ ...current, mermaid: mod.mermaid }));
+      });
+    }
+
+    if (needsMath && !plugins.math) {
+      void import("@streamdown/math").then((mod) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPlugins((current) => ({ ...current, math: mod.math }));
+      });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needsCode, needsMath, needsMermaid, plugins.code, plugins.math, plugins.mermaid]);
+
+  return plugins;
+}
+
+const MessageResponseComponent = ({
+  className,
+  children,
+  ...props
+}: MessageResponseProps) => {
+  const text = typeof children === "string" ? children : "";
+  const plugins = usePluginsFor(text);
+
+  return (
     <Streamdown
       className={cn(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
-      plugins={streamdownPlugins}
+      plugins={plugins}
       {...props}
-    />
-  ),
+    >
+      {children}
+    </Streamdown>
+  );
+};
+
+export const MessageResponse = memo(
+  MessageResponseComponent,
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children &&
     nextProps.isAnimating === prevProps.isAnimating
